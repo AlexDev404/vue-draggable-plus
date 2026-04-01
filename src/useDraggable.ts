@@ -190,14 +190,16 @@ export function useDraggable<T>(...args: any[]): UseDraggableReturn {
   }
 
   let instance: Sortable | null = null
+  const resolvedOptions = unref(options) ?? {}
   const {
     immediate = true,
     clone = defaultClone,
-    forceFallback,
     fallbackOnBody,
     customUpdate,
     renderGhost
-  } = unref(options) ?? {}
+  } = resolvedOptions
+  // renderGhost requires SortableJS fallback mode so that Sortable.ghost exists
+  const forceFallback = renderGhost ? true : resolvedOptions.forceFallback
 
   /**
    * Element dragging started
@@ -333,6 +335,11 @@ export function useDraggable<T>(...args: any[]): UseDraggableReturn {
   function mergeOptions() {
     // eslint-disable-next-line
     const { immediate, clone, renderGhost, ...restOptions } = unref(options) ?? {}
+
+    // renderGhost requires SortableJS fallback mode so that Sortable.ghost exists
+    if (renderGhost) {
+      restOptions.forceFallback = true
+    }
 
     forEachObject(restOptions, (key, fn) => {
       if (!isOn(key)) return
