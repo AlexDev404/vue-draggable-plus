@@ -96,6 +96,14 @@ export interface UseDraggableOptions<T> extends Options {
   immediate?: boolean
   customUpdate?: (event: DraggableEvent<T>) => void
   /**
+   * Customize the ghost element content when dragging starts.
+   * Called after the ghost element is created by SortableJS.
+   * @param ghostEl - The ghost HTML element that can be modified
+   * @param data - The data of the dragged item
+   * @param clonedData - The cloned data of the dragged item
+   */
+  renderGhost?: (ghostEl: HTMLElement, data: T, clonedData: T) => void
+  /**
    * Element dragging started
    */
   onStart?: ((event: DraggableEvent<T>) => void) | undefined
@@ -187,7 +195,8 @@ export function useDraggable<T>(...args: any[]): UseDraggableReturn {
     clone = defaultClone,
     forceFallback,
     fallbackOnBody,
-    customUpdate
+    customUpdate,
+    renderGhost
   } = unref(options) ?? {}
 
   /**
@@ -202,6 +211,10 @@ export function useDraggable<T>(...args: any[]): UseDraggableReturn {
     const clonedData = clone(data)
     setCurrentData(data, clonedData)
     item[CLONE_ELEMENT_KEY] = clonedData
+    if (renderGhost) {
+      const ghostEl = Sortable.ghost
+      if (ghostEl) renderGhost(ghostEl, data, clonedData)
+    }
   }
 
   /**
@@ -319,7 +332,7 @@ export function useDraggable<T>(...args: any[]): UseDraggableReturn {
 
   function mergeOptions() {
     // eslint-disable-next-line
-    const { immediate, clone, ...restOptions } = unref(options) ?? {}
+    const { immediate, clone, renderGhost, ...restOptions } = unref(options) ?? {}
 
     forEachObject(restOptions, (key, fn) => {
       if (!isOn(key)) return
